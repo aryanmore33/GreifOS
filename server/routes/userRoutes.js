@@ -9,7 +9,7 @@ const {
   logout
 } = require("../controllers/userControllers");
 
-const { jwtAuthMiddleware } = require("../middleware/jwtAuthMiddleware");
+const { jwtAuthMiddleware } = require("../middlewares/jwtAuthMiddleware");
 
 const router = express.Router();
 
