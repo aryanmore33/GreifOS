@@ -12,6 +12,9 @@ const { jwtAuthMiddleware } = require('./middlewares/jwtAuthMiddleware.js');
 
 // Routes
 const userRoutes = require('./routes/userRoutes.js');
+const vaultRoutes = require("./routes/vaultRoutes.js");
+const assetRoutes = require("./routes/assetRoutes");
+const nomineeRoutes = require("./routes/nomineeRoutes");
 
 // Error Handler
 const errorHandler = require('./middlewares/errorHandler.js');
@@ -60,6 +63,9 @@ app.use("/uploads", express.static("./uploads"));
 
 // ✅ Routes
 app.use('/api/users', userRoutes);
+app.use("/api/vault", vaultRoutes);
+app.use("/api/assets", assetRoutes);
+app.use("/api/nominee", nomineeRoutes);
 
 
 // ✅ Root route checker
