@@ -15,6 +15,7 @@ const userRoutes = require('./routes/userRoutes.js');
 const vaultRoutes = require("./routes/vaultRoutes.js");
 const assetRoutes = require("./routes/assetRoutes");
 const nomineeRoutes = require("./routes/nomineeRoutes");
+const deathRoutes = require("./routes/deathRoutes.js");
 
 // Error Handler
 const errorHandler = require('./middlewares/errorHandler.js');
@@ -66,6 +67,7 @@ app.use('/api/users', userRoutes);
 app.use("/api/vault", vaultRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/nominee", nomineeRoutes);
+app.use("/api/death", deathRoutes);
 
 
 // ✅ Root route checker
@@ -73,9 +75,6 @@ app.get('/', (req, res) => {
   res.send('GriefOS Backend Running ✅');
 });
 
-// ✅ Socket namespace for real-time status/notifications
-// const civicmind_socket = io.of('/complaints/updates');
-// initSocketHandlers(civicmind_socket);
 
 // ✅ Error handler (must be last)
 app.use(errorHandler);
