@@ -25,6 +25,6 @@ router.post("/verify-otp", verifyOtp);
 
 router.get("/me", jwtAuthMiddleware, checkAuthenticated);
 
-router.post("/logout", logout);
+router.post("/logout", jwtAuthMiddleware, logout);
 
 module.exports = router;

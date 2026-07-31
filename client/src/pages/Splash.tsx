@@ -117,15 +117,15 @@ const Splash = () => {
       >
         <PressableButton
           className="w-full py-3.5 bg-primary text-primary-foreground font-semibold rounded-lg"
-          onClick={() => navigate("/owner/onboarding")}
+          onClick={() => navigate("/register")}
         >
-          Set up my vault
+          Get Started
         </PressableButton>
         <PressableButton
           className="w-full py-3.5 border border-secondary text-secondary font-semibold rounded-lg bg-transparent"
-          onClick={() => navigate("/nominee/login")}
+          onClick={() => navigate("/login")}
         >
-          I am a nominee
+          Log In
         </PressableButton>
       </motion.div>
 
