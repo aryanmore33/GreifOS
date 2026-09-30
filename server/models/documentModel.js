@@ -1,37 +1,46 @@
 const BaseModel = require("./BaseModel");
 const Db = require('../config/db');
 
-class AssetModel extends BaseModel {
+class DocumentModel extends BaseModel {
     constructor(userId = null) {
         super(userId);
 
-        this.tableName = "assets";
-        this.hasCreatedBy = false;
+        this.tableName = "documents";
+        this.hasCreatedBy = true;
     }
 
     // ================= CREATE =================
-    async createAsset(data) {
+    async createDocument(data) {
         const insertData = this.insertStatement(data);
 
         const result = await Db.raw(
             `
-            INSERT INTO assets (
-                vault_id, owner_id, asset_type, institution_name, label,
-                detected_via, is_confirmed, is_active, notes
+            INSERT INTO documents (
+                vault_id,
+                uploaded_by_user_id,
+                document_type,
+                original_filename,
+                storage_key,
+                mime_type,
+                file_size_bytes,
+                sha256_hash,
+                status
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
             RETURNING *
             `,
             [
                 insertData.vault_id,
-                insertData.owner_id,
-                insertData.asset_type,
-                insertData.institution_name,
-                insertData.label ?? null,
-                insertData.detected_via ?? null,
-                insertData.is_confirmed ?? false,
-                insertData.is_active ?? true,
-                insertData.notes ?? null
+                insertData.uploaded_by_user_id ?? insertData.uploaded_by ?? null,
+                insertData.document_type,
+                insertData.original_filename ?? insertData.file_name,
+                insertData.storage_key,
+                insertData.mime_type,
+                insertData.file_size_bytes ?? insertData.file_size,
+                insertData.sha256_hash ?? insertData.checksum,
+                insertData.status ?? 'uploaded'
             ]
         );
 
@@ -39,27 +48,27 @@ class AssetModel extends BaseModel {
     }
 
     // ================= GET BY ID =================
-    async getAssetById(assetId) {
+    async getDocumentById(documentId) {
         const result = await Db.raw(
             `
             SELECT *
-            FROM assets
+            FROM documents
             WHERE id = ?
               AND deleted_at IS NULL
             LIMIT 1
             `,
-            [assetId]
+            [documentId]
         );
 
         return result.rows[0];
     }
 
-    // ================= GET VAULT ASSETS =================
-    async getAssetsByVault(vaultId) {
+    // ================= GET VAULT DOCUMENTS =================
+    async getDocumentsByVault(vaultId) {
         const result = await Db.raw(
             `
             SELECT *
-            FROM assets
+            FROM documents
             WHERE vault_id = ?
               AND deleted_at IS NULL
             ORDER BY created_at DESC
@@ -71,19 +80,19 @@ class AssetModel extends BaseModel {
     }
 
     // ================= GET BY TYPE =================
-    async getAssetsByType(vaultId, assetType) {
+    async getDocumentsByType(vaultId, documentType) {
         const result = await Db.raw(
             `
             SELECT *
-            FROM assets
+            FROM documents
             WHERE vault_id = ?
-              AND asset_type = ?
+              AND document_type = ?
               AND deleted_at IS NULL
             ORDER BY created_at DESC
             `,
             [
                 vaultId,
-                assetType
+                documentType
             ]
         );
 
@@ -91,7 +100,7 @@ class AssetModel extends BaseModel {
     }
 
     // ================= UPDATE =================
-    async updateAsset(assetId, data) {
+    async updateDocument(documentId, data) {
         const updateData = this.getDefinedObject(
             await this.updateStatement(data)
         );
@@ -99,7 +108,7 @@ class AssetModel extends BaseModel {
         const columns = Object.keys(updateData);
 
         if (columns.length === 0) {
-            return this.getAssetById(assetId);
+            return this.getDocumentById(documentId);
         }
 
         const values = Object.values(updateData);
@@ -108,11 +117,11 @@ class AssetModel extends BaseModel {
             .map(column => `${column} = ?`)
             .join(", ");
 
-        values.push(assetId);
+        values.push(documentId);
 
         const result = await Db.raw(
             `
-            UPDATE assets
+            UPDATE documents
             SET ${setClause},
                 updated_at = NOW()
             WHERE id = ?
@@ -126,14 +135,14 @@ class AssetModel extends BaseModel {
     }
 
     // ================= DELETE =================
-    async deleteAsset(assetId) {
+    async deleteDocument(documentId) {
         const updateData = await this.updateStatement({
             deleted_at: new Date()
         });
 
         const result = await Db.raw(
             `
-            UPDATE assets
+            UPDATE documents
             SET
                 deleted_at = ?,
                 updated_at = NOW()
@@ -143,7 +152,7 @@ class AssetModel extends BaseModel {
             `,
             [
                 updateData.deleted_at,
-                assetId
+                documentId
             ]
         );
 
@@ -151,4 +160,4 @@ class AssetModel extends BaseModel {
     }
 }
 
-module.exports = AssetModel;
+module.exports = DocumentModel;

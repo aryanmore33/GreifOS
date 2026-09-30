@@ -1,37 +1,33 @@
 const BaseModel = require("./BaseModel");
 const Db = require('../config/db');
 
-class AssetModel extends BaseModel {
+class ChecklistModel extends BaseModel {
     constructor(userId = null) {
         super(userId);
 
-        this.tableName = "assets";
-        this.hasCreatedBy = false;
+        this.tableName = "checklists";
+        this.hasCreatedBy = true;
     }
 
     // ================= CREATE =================
-    async createAsset(data) {
+    async createChecklist(data) {
         const insertData = this.insertStatement(data);
 
         const result = await Db.raw(
             `
-            INSERT INTO assets (
-                vault_id, owner_id, asset_type, institution_name, label,
-                detected_via, is_confirmed, is_active, notes
+            INSERT INTO checklists (
+                vault_id,
+                status, version
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (
+                ?, ?, ?
+            )
             RETURNING *
             `,
             [
                 insertData.vault_id,
-                insertData.owner_id,
-                insertData.asset_type,
-                insertData.institution_name,
-                insertData.label ?? null,
-                insertData.detected_via ?? null,
-                insertData.is_confirmed ?? false,
-                insertData.is_active ?? true,
-                insertData.notes ?? null
+                insertData.status ?? 'active',
+                insertData.version ?? '1.0'
             ]
         );
 
@@ -39,29 +35,27 @@ class AssetModel extends BaseModel {
     }
 
     // ================= GET BY ID =================
-    async getAssetById(assetId) {
+    async getChecklistById(checklistId) {
         const result = await Db.raw(
             `
             SELECT *
-            FROM assets
+            FROM checklists
             WHERE id = ?
-              AND deleted_at IS NULL
             LIMIT 1
             `,
-            [assetId]
+            [checklistId]
         );
 
         return result.rows[0];
     }
 
-    // ================= GET VAULT ASSETS =================
-    async getAssetsByVault(vaultId) {
+    // ================= GET VAULT CHECKLISTS =================
+    async getChecklistsByVault(vaultId) {
         const result = await Db.raw(
             `
             SELECT *
-            FROM assets
+            FROM checklists
             WHERE vault_id = ?
-              AND deleted_at IS NULL
             ORDER BY created_at DESC
             `,
             [vaultId]
@@ -71,19 +65,18 @@ class AssetModel extends BaseModel {
     }
 
     // ================= GET BY TYPE =================
-    async getAssetsByType(vaultId, assetType) {
+    async getChecklistsByStatus(vaultId, status) {
         const result = await Db.raw(
             `
             SELECT *
-            FROM assets
+            FROM checklists
             WHERE vault_id = ?
-              AND asset_type = ?
-              AND deleted_at IS NULL
+              AND status = ?
             ORDER BY created_at DESC
             `,
             [
                 vaultId,
-                assetType
+                status
             ]
         );
 
@@ -91,7 +84,7 @@ class AssetModel extends BaseModel {
     }
 
     // ================= UPDATE =================
-    async updateAsset(assetId, data) {
+    async updateChecklist(checklistId, data) {
         const updateData = this.getDefinedObject(
             await this.updateStatement(data)
         );
@@ -99,7 +92,7 @@ class AssetModel extends BaseModel {
         const columns = Object.keys(updateData);
 
         if (columns.length === 0) {
-            return this.getAssetById(assetId);
+            return this.getChecklistById(checklistId);
         }
 
         const values = Object.values(updateData);
@@ -108,15 +101,13 @@ class AssetModel extends BaseModel {
             .map(column => `${column} = ?`)
             .join(", ");
 
-        values.push(assetId);
+        values.push(checklistId);
 
         const result = await Db.raw(
             `
-            UPDATE assets
-            SET ${setClause},
-                updated_at = NOW()
+            UPDATE checklists
+            SET ${setClause}
             WHERE id = ?
-              AND deleted_at IS NULL
             RETURNING *
             `,
             values
@@ -125,30 +116,31 @@ class AssetModel extends BaseModel {
         return result.rows[0];
     }
 
-    // ================= DELETE =================
-    async deleteAsset(assetId) {
-        const updateData = await this.updateStatement({
-            deleted_at: new Date()
-        });
-
+    // ================= UPDATE STATUS =================
+    async updateStatus(checklistId, status) {
         const result = await Db.raw(
             `
-            UPDATE assets
+            UPDATE checklists
             SET
-                deleted_at = ?,
+                status = ?,
                 updated_at = NOW()
             WHERE id = ?
-              AND deleted_at IS NULL
-            RETURNING id
+            RETURNING *
             `,
             [
-                updateData.deleted_at,
-                assetId
+                status,
+                checklistId
             ]
         );
 
         return result.rows[0];
     }
+
+    // ================= DELETE =================
+    async deleteChecklist(checklistId) {
+        const result = await Db.raw(`UPDATE checklists SET status = 'archived', updated_at = NOW() WHERE id = ? RETURNING id`, [checklistId]);
+        return result.rows[0];
+    }
 }
 
-module.exports = AssetModel;
+module.exports = ChecklistModel;
